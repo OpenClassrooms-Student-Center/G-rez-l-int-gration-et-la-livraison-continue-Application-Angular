@@ -1,0 +1,13 @@
+# Single service: the Angular app served by nginx.
+services:
+  app:
+    build:
+      context: .              # Folder sent to the Docker engine (the whole repo, filtered by .dockerignore)
+      dockerfile: Dockerfile   # Build file to use (implicit when named "Dockerfile", spelled out here for clarity)
+    ports:
+      # "host:container" — the container always listens on 80 (see Dockerfile),
+      # but on the host machine we use 8080 to avoid conflicting with IIS,
+      # which already occupies port 80 on this machine.
+      # -> app reachable at http://localhost:8080
+      # Switching back to "80:80" later would make it reachable at http://localhost (no port).
+      - "8080:80"
