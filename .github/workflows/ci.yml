@@ -11,8 +11,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
-  checks: write
 
 jobs:
   # First job of the pipeline. Future jobs (e.g. build & push to
@@ -20,6 +18,11 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+      # Actually set at runtime by "Detect project type" below (via
+      # $GITHUB_ENV). Declared here with an empty default just so the
+      # editor's static linter recognizes env.PROJECT_TYPE downstream.
+      PROJECT_TYPE: ''
 
     steps:
       - name: Checkout
