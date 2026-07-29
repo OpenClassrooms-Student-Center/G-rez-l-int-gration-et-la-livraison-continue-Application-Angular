@@ -55,8 +55,8 @@ jobs:
         run: ./run-tests.sh
 
       - name: Publish test report
-        if: always()
-        uses: dorny/test-reporter@v1
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
         with:
           name: Unit Tests
           path: test-results/*.xml
