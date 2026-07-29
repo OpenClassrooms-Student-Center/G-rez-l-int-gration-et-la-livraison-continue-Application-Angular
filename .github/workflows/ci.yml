@@ -1,0 +1,67 @@
+name: CI
+
+# Same file is used, unmodified, in the Gradle (Java) and npm (Angular)
+# repos. The "test" job below auto-detects which one it's running in.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # First job of the pipeline. Future jobs (e.g. build & push to
+  # ghcr.io) will declare `needs: test` instead of being folded in here.
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      # Actually set at runtime by "Detect project type" below (via
+      # $GITHUB_ENV). Declared here with an empty default just so the
+      # editor's static linter recognizes env.PROJECT_TYPE downstream.
+      PROJECT_TYPE: ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect project type
+        run: |
+          if [[ -f gradlew && ( -f build.gradle || -f build.gradle.kts ) ]]; then
+            echo "PROJECT_TYPE=gradle" >> "$GITHUB_ENV"
+          elif [[ -f package.json ]]; then
+            echo "PROJECT_TYPE=npm" >> "$GITHUB_ENV"
+          else
+            echo "::error::Unable to detect project type (expected gradlew+build.gradle or package.json)"
+            exit 1
+          fi
+
+      - name: Set up JDK 21
+        if: env.PROJECT_TYPE == 'gradle'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Node 20
+        if: env.PROJECT_TYPE == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Run unit tests
+        run: ./run-tests.sh
+
+      - name: Publish test report
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: Unit Tests
+          path: test-results/*.xml
+          reporter: java-junit
+          fail-on-error: true
